@@ -2,87 +2,102 @@ import { URL, URLStats } from '../types';
 import db from '../db';
 import { generateShortCode } from '../utils';
 
-export const getAll = () => {
-  const query = 'SELECT * FROM urls';
+export const getAll = async () => {
+  const sql = 'SELECT * FROM urls';
 
-  const result = db.prepare(query).all() as URL[];
+  const { rows } = await db.execute(sql);
 
-  return result;
+  return rows as URL[];
 };
 
-export const getByCode = (shortCode: string) => {
-  const query = `SELECT id, url, short_code as shortCode, created_at as createdAt, updated_at as updatedAt 
+export const getByCode = async (shortCode: string) => {
+  const sql = `SELECT id, url, short_code as shortCode, created_at as createdAt, updated_at as updatedAt 
                  FROM urls 
                  WHERE short_code = ?`;
+  const args = [shortCode];
 
-  const result = db.prepare(query).get(shortCode) as URL;
+  const result = await db.execute({ sql, args });
+  const [row] = result.rows as URL[];
 
-  return result || null;
+  return row || null;
 };
 
-export const getByUrl = (url: string) => {
-  const query = `SELECT id, url, short_code as shortCode, created_at as createdAt, updated_at as updatedAt 
+export const getByUrl = async (url: string) => {
+  const sql = `SELECT id, url, short_code as shortCode, created_at as createdAt, updated_at as updatedAt 
                  FROM urls 
                  WHERE url = ?`;
+  const args = [url];
 
-  const result = db.prepare(query).get(url) as URL;
+  const result = await db.execute({ sql, args });
+  const [row] = result.rows as URL[];
 
-  return result;
+  return row;
 };
 
-export const getStatsByCode = (shortCode: string) => {
-  const query = `SELECT id, url, short_code as shortCode, created_at as createdAt, 
+export const getStatsByCode = async (shortCode: string) => {
+  const sql = `SELECT id, url, short_code as shortCode, created_at as createdAt, 
                         updated_at as updatedAt, access_count as accessCount 
                  FROM urls 
                  WHERE short_code = ?`;
+  const args = [shortCode];
 
-  const result = db.prepare(query).get(shortCode) as URLStats;
+  const { rows } = await db.execute({ sql, args });
+  const [row] = rows as URLStats[];
 
-  return result || null;
+  return row || null;
 };
 
-const getById = (id: number) => {
-  const query = `SELECT id, url, short_code as shortCode, created_at as createdAt, updated_at as updatedAt  
+const getById = async (id: number) => {
+  const sql = `SELECT id, url, short_code as shortCode, created_at as createdAt, updated_at as updatedAt  
                 FROM urls WHERE id = ?`;
 
-  const result = db.prepare(query).get(id) as URL;
+  const args = [id];
+  const result = await db.execute({ sql, args });
+  const { rows } = result;
+  const [row] = rows as URL[];
 
-  return result || null;
+  return row || null;
 };
 
-export const create = (url: string) => {
-  const query = 'INSERT INTO urls(url, short_code) VALUES (?, ?)';
-  const shortCode = generateShortCode();
+export const create = async (url: string) => {
+  const sql = 'INSERT INTO urls(url, short_code) VALUES (?, ?)';
+  const shortCode = await generateShortCode();
+  const args = [url, shortCode];
 
-  const insert = db.prepare(query).run(url, shortCode);
+  const insert = await db.execute({ sql, args });
 
   const { lastInsertRowid: id } = insert;
 
-  const result = getById(id as number);
+  if (null == id) return null;
 
-  return result;
+  const row = await getById(Number(id));
+
+  return row;
 };
 
-export const deleteByCode = (shortCode: string) => {
-  const query = 'DELETE FROM urls WHERE short_code = ?';
+export const deleteByCode = async (shortCode: string) => {
+  const sql = 'DELETE FROM urls WHERE short_code = ?';
+  const args = [shortCode];
 
-  const result = db.prepare(query).run(shortCode);
+  const result = await db.execute({ sql, args });
 
-  return result.changes;
+  return result.rowsAffected > 0;
 };
 
-export const update = (shortCode: string, newUrl: string) => {
-  const query = 'UPDATE urls SET url = ?, updated_at = CURRENT_TIMESTAMP WHERE short_code = ?';
+export const update = async (shortCode: string, newUrl: string) => {
+  const sql = 'UPDATE urls SET url = ?, updated_at = CURRENT_TIMESTAMP WHERE short_code = ?';
+  const args = [newUrl, shortCode];
 
-  const result = db.prepare(query).run(newUrl, shortCode);
+  const rows = await db.execute({ sql, args });
 
-  return result.changes;
+  return rows.rowsAffected > 0;
 };
 
-export const incrementAccessCount = (shortCode: string) => {
-  const query = 'UPDATE urls SET access_count = access_count + 1 WHERE short_code = ?';
+export const incrementAccessCount = async (shortCode: string) => {
+  const sql = 'UPDATE urls SET access_count = access_count + 1 WHERE short_code = ?';
+  const args = [shortCode];
 
-  const result = db.prepare(query).run(shortCode);
+  const result = await db.execute({ sql, args });
 
-  return result.changes;
+  return result.rowsAffected > 0;
 };
