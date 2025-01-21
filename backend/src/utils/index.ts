@@ -13,8 +13,8 @@ export const generateRandomLetter = () => {
   return letter;
 };
 
-const checkIfCodeExists = (shortCode: string) => {
-  const url = getByCode(shortCode);
+const checkIfCodeExists = async (shortCode: string) => {
+  const url = await getByCode(shortCode);
 
   return null != url;
 };
@@ -29,12 +29,12 @@ const generateRandomCode = () => {
   return code;
 };
 
-export const generateShortCode = () => {
+export const generateShortCode = async () => {
   let shortCode;
 
   do {
     shortCode = generateRandomCode();
-  } while (checkIfCodeExists(shortCode));
+  } while (await checkIfCodeExists(shortCode));
 
   return shortCode;
 };
