@@ -1,5 +1,5 @@
 {
-  "name": "url-shortening",
+  "name": "shrlinker-backend",
   "version": "0.0.1",
   "description": "URL shortening service",
   "main": "dist/app.js",
